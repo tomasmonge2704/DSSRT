@@ -3,28 +3,19 @@
 import { useState } from "react";
 import { useMetrics } from "@/hooks/use-metrics";
 import { MetricsBarChart } from "@/components/dashboard/metrics-bar-chart";
-import { DateRangePicker, type DateRangePreset } from "@/components/dashboard/date-range-picker";
+import { DateRangePicker } from "@/components/dashboard/date-range-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getChartDataByAccount } from "@/lib/metrics-calculator";
 import { ALL_METRIC_KEYS } from "@/types/metrics";
-
-function getDateRange(preset: DateRangePreset) {
-  if (preset === "all") return {};
-  const weeks = preset === "last4" ? 4 : preset === "last6" ? 6 : 8;
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - weeks * 7);
-  return {
-    startDate: start.toISOString().split("T")[0],
-    endDate: end.toISOString().split("T")[0],
-  };
-}
+import {
+  filterMetricsByPreset,
+  type DateRangePreset,
+} from "@/lib/dashboard-filters";
 
 export default function ComparePage() {
   const [dateRange, setDateRange] = useState<DateRangePreset>("all");
-  const dates = getDateRange(dateRange);
-
-  const { data, isLoading } = useMetrics(dates);
+  const { data: allMetrics, isLoading } = useMetrics();
+  const filteredMetrics = filterMetricsByPreset(allMetrics, dateRange);
 
   return (
     <div className="space-y-6">
@@ -49,7 +40,7 @@ export default function ComparePage() {
           {ALL_METRIC_KEYS.map((key) => (
             <MetricsBarChart
               key={key}
-              data={getChartDataByAccount(data, key)}
+              data={getChartDataByAccount(filteredMetrics, key)}
               metricKey={key}
             />
           ))}

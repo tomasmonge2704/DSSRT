@@ -1,5 +1,6 @@
-import type { WeeklyMetrics, MetricKey, KpiCardData, AccountHandle, METRIC_LABELS } from "@/types/metrics";
+import type { WeeklyMetrics, MetricKey, KpiCardData } from "@/types/metrics";
 import { ALL_METRIC_KEYS, METRIC_LABELS as LABELS } from "@/types/metrics";
+import type { MetricViewMode } from "@/lib/dashboard-filters";
 
 export function calculateVariance(
   current: number,
@@ -42,7 +43,53 @@ export function aggregateMetricsByWeek(
     }));
 }
 
-export function getKpiData(metrics: WeeklyMetrics[]): KpiCardData[] {
+function sumMetrics(metrics: WeeklyMetrics[]): Record<MetricKey, number> {
+  const totals = Object.fromEntries(
+    ALL_METRIC_KEYS.map((metricKey) => [metricKey, 0])
+  ) as Record<MetricKey, number>;
+
+  for (const metric of metrics) {
+    for (const metricKey of ALL_METRIC_KEYS) {
+      totals[metricKey] += metric[metricKey];
+    }
+  }
+
+  return totals;
+}
+
+export function getKpiData(
+  metrics: WeeklyMetrics[],
+  options: {
+    mode?: MetricViewMode;
+    comparisonMetrics?: WeeklyMetrics[];
+  } = {}
+): KpiCardData[] {
+  if (metrics.length === 0) {
+    return [];
+  }
+
+  if (options.mode === "cumulative") {
+    const currentTotals = sumMetrics(metrics);
+    const previousTotals =
+      options.comparisonMetrics && options.comparisonMetrics.length > 0
+        ? sumMetrics(options.comparisonMetrics)
+        : null;
+
+    return ALL_METRIC_KEYS.map((key) => {
+      const currentValue = currentTotals[key] || 0;
+      const previousValue = previousTotals ? previousTotals[key] || 0 : null;
+      const { percent } = calculateVariance(currentValue, previousValue);
+
+      return {
+        metricKey: key,
+        label: LABELS[key],
+        currentValue,
+        previousValue,
+        variancePercent: percent,
+      };
+    });
+  }
+
   const aggregated = aggregateMetricsByWeek(metrics);
 
   if (aggregated.length === 0) return [];
@@ -67,7 +114,8 @@ export function getKpiData(metrics: WeeklyMetrics[]): KpiCardData[] {
 
 export function getChartDataByAccount(
   metrics: WeeklyMetrics[],
-  metricKey: MetricKey
+  metricKey: MetricKey,
+  mode: MetricViewMode = "weekly"
 ): { weekLabel: string; weekStartDate: string; elosodebresh: number; mundobresh: number }[] {
   const weekMap = new Map<string, { weekLabel: string; weekStartDate: string; elosodebresh: number; mundobresh: number }>();
 
@@ -89,9 +137,27 @@ export function getChartDataByAccount(
     }
   }
 
-  return Array.from(weekMap.values()).sort((a, b) =>
+  const weeklyData = Array.from(weekMap.values()).sort((a, b) =>
     a.weekStartDate.localeCompare(b.weekStartDate)
   );
+
+  if (mode === "weekly") {
+    return weeklyData;
+  }
+
+  let accumulatedOso = 0;
+  let accumulatedMundo = 0;
+
+  return weeklyData.map((week) => {
+    accumulatedOso += week.elosodebresh;
+    accumulatedMundo += week.mundobresh;
+
+    return {
+      ...week,
+      elosodebresh: accumulatedOso,
+      mundobresh: accumulatedMundo,
+    };
+  });
 }
 
 export function formatNumber(value: number): string {

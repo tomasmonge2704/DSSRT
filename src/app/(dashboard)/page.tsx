@@ -6,13 +6,20 @@ import { KpiGrid } from "@/components/dashboard/kpi-grid";
 import { MetricsLineChart } from "@/components/dashboard/metrics-line-chart";
 import { MetricsTable } from "@/components/dashboard/metrics-table";
 import { AccountFilter, type FilterValue } from "@/components/dashboard/account-filter";
-import { DateRangePicker, type DateRangePreset } from "@/components/dashboard/date-range-picker";
+import { DateRangePicker } from "@/components/dashboard/date-range-picker";
+import { PeriodViewPicker } from "@/components/dashboard/period-view-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getKpiData,
   getChartDataByAccount,
 } from "@/lib/metrics-calculator";
 import type { AccountHandle, MetricKey } from "@/types/metrics";
+import {
+  filterMetricsByPreset,
+  getPreviousMetricsByPreset,
+  type DateRangePreset,
+  type MetricViewMode,
+} from "@/lib/dashboard-filters";
 import {
   Select,
   SelectContent,
@@ -22,40 +29,33 @@ import {
 } from "@/components/ui/select";
 import { METRIC_LABELS, ALL_METRIC_KEYS } from "@/types/metrics";
 
-function getDateRange(preset: DateRangePreset) {
-  if (preset === "all") return {};
-  const weeks = preset === "last4" ? 4 : preset === "last6" ? 6 : 8;
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - weeks * 7);
-  return {
-    startDate: start.toISOString().split("T")[0],
-    endDate: end.toISOString().split("T")[0],
-  };
-}
-
 export default function OverviewPage() {
   const [accountFilter, setAccountFilter] = useState<FilterValue>("all");
   const [dateRange, setDateRange] = useState<DateRangePreset>("all");
+  const [viewMode, setViewMode] = useState<MetricViewMode>("cumulative");
   const [chartMetric, setChartMetric] = useState<MetricKey>("views");
 
   const accounts: AccountHandle[] =
     accountFilter === "all" ? [] : [accountFilter];
-  const dates = getDateRange(dateRange);
+  const { data: allMetrics, isLoading } = useMetrics();
+  const filteredMetrics = filterMetricsByPreset(allMetrics, dateRange, accounts);
+  const comparisonMetrics =
+    viewMode === "cumulative"
+      ? getPreviousMetricsByPreset(allMetrics, dateRange, accounts)
+      : [];
 
-  const { data, isLoading } = useMetrics({
-    accounts,
-    ...dates,
+  const kpiData = getKpiData(filteredMetrics, {
+    mode: viewMode,
+    comparisonMetrics,
   });
-
-  const kpiData = getKpiData(data);
-  const chartData = getChartDataByAccount(data, chartMetric);
+  const chartData = getChartDataByAccount(filteredMetrics, chartMetric, viewMode);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Overview</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <PeriodViewPicker value={viewMode} onChange={setViewMode} />
           <AccountFilter value={accountFilter} onChange={setAccountFilter} />
           <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
@@ -96,6 +96,7 @@ export default function OverviewPage() {
           data={chartData}
           metricKey={chartMetric}
           selectedAccount={accountFilter}
+          viewMode={viewMode}
         />
       )}
 
@@ -104,7 +105,7 @@ export default function OverviewPage() {
         {isLoading ? (
           <Skeleton className="h-[300px] rounded-lg" />
         ) : (
-          <MetricsTable data={data} />
+          <MetricsTable data={filteredMetrics} />
         )}
       </div>
     </div>

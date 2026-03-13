@@ -17,6 +17,7 @@ import { metricsChartConfig } from "@/lib/chart-config";
 import { formatNumber } from "@/lib/metrics-calculator";
 import type { MetricKey, AccountHandle } from "@/types/metrics";
 import { METRIC_LABELS } from "@/types/metrics";
+import type { MetricViewMode } from "@/lib/dashboard-filters";
 
 interface ChartDataPoint {
   weekLabel: string;
@@ -29,12 +30,14 @@ interface MetricsLineChartProps {
   data: ChartDataPoint[];
   metricKey: MetricKey;
   selectedAccount?: AccountHandle | "all";
+  viewMode?: MetricViewMode;
 }
 
 export function MetricsLineChart({
   data,
   metricKey,
   selectedAccount = "all",
+  viewMode = "weekly",
 }: MetricsLineChartProps) {
   const showOso = selectedAccount === "all" || selectedAccount === "@elosodebresh";
   const showMundo = selectedAccount === "all" || selectedAccount === "@mundobresh";
@@ -42,7 +45,11 @@ export function MetricsLineChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{METRIC_LABELS[metricKey]} por Semana</CardTitle>
+        <CardTitle>
+          {viewMode === "cumulative"
+            ? `${METRIC_LABELS[metricKey]} acumulado`
+            : `${METRIC_LABELS[metricKey]} por Semana`}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={metricsChartConfig} className="aspect-auto h-[350px] w-full">

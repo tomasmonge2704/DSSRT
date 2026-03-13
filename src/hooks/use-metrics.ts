@@ -13,14 +13,15 @@ export function useMetrics(options: UseMetricsOptions = {}) {
   const [data, setData] = useState<WeeklyMetrics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const accountsKey = options.accounts?.join(",") ?? "";
 
   const fetchMetrics = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     const params = new URLSearchParams();
-    if (options.accounts && options.accounts.length > 0) {
-      params.set("accounts", options.accounts.join(","));
+    if (accountsKey) {
+      params.set("accounts", accountsKey);
     }
     if (options.startDate) params.set("startDate", options.startDate);
     if (options.endDate) params.set("endDate", options.endDate);
@@ -35,7 +36,7 @@ export function useMetrics(options: UseMetricsOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [options.accounts?.join(","), options.startDate, options.endDate]);
+  }, [accountsKey, options.startDate, options.endDate]);
 
   useEffect(() => {
     fetchMetrics();
