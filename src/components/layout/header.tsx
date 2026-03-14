@@ -2,20 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, TrendingUp, GitCompareArrows, Upload, Menu, Music2 } from "lucide-react";
+import { Menu } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { BrandMark } from "./brand-mark";
+import {
+  DASHBOARD_NAV_ITEMS,
+  getBrandHref,
+  isBrandHrefActive,
+  type DashboardBrand,
+} from "@/lib/branding";
 
-const navItems = [
-  { href: "/", label: "Overview", icon: BarChart3 },
-  { href: "/trends", label: "Tendencias", icon: TrendingUp },
-  { href: "/compare", label: "Comparar", icon: GitCompareArrows },
-  { href: "/import", label: "Importar", icon: Upload },
-];
+interface HeaderProps {
+  brand?: DashboardBrand;
+}
 
-export function Header() {
+export function Header({ brand = "default" }: HeaderProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -31,8 +35,7 @@ export function Header() {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <Music2 className="h-5 w-5 text-primary" />
-            <span className="font-bold">DSSRT</span>
+            <BrandMark brand={brand} compact />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -41,15 +44,13 @@ export function Header() {
       </div>
       {mobileMenuOpen && (
         <nav className="flex flex-col gap-1 border-t border-border p-4 md:hidden">
-          {navItems.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+          {DASHBOARD_NAV_ITEMS.map((item) => {
+            const href = getBrandHref(brand, item.href);
+            const isActive = isBrandHrefActive(pathname, brand, item.href);
             return (
               <Link
-                key={item.href}
-                href={item.href}
+                key={href}
+                href={href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",

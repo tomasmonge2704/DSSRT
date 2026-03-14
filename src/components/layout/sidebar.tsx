@@ -2,35 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, TrendingUp, GitCompareArrows, Upload, Music2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BrandMark } from "./brand-mark";
+import {
+  BRAND_CONFIGS,
+  DASHBOARD_NAV_ITEMS,
+  getBrandHref,
+  isBrandHrefActive,
+  type DashboardBrand,
+} from "@/lib/branding";
 
-const navItems = [
-  { href: "/", label: "Overview", icon: BarChart3 },
-  { href: "/trends", label: "Tendencias", icon: TrendingUp },
-  { href: "/compare", label: "Comparar", icon: GitCompareArrows },
-  { href: "/import", label: "Importar", icon: Upload },
-];
+interface SidebarProps {
+  brand?: DashboardBrand;
+}
 
-export function Sidebar() {
+export function Sidebar({ brand = "default" }: SidebarProps) {
   const pathname = usePathname();
+  const config = BRAND_CONFIGS[brand];
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:border-r border-border bg-card">
-      <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-        <Music2 className="h-6 w-6 text-primary" />
-        <span className="text-lg font-bold">DSSRT</span>
+      <div className="flex h-16 items-center border-b border-border px-6">
+        <BrandMark brand={brand} />
       </div>
       <nav className="flex flex-1 flex-col gap-1 p-4">
-        {navItems.map((item) => {
-          const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
+        {DASHBOARD_NAV_ITEMS.map((item) => {
+          const href = getBrandHref(brand, item.href);
+          const isActive = isBrandHrefActive(pathname, brand, item.href);
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={href}
+              href={href}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
@@ -45,7 +47,7 @@ export function Sidebar() {
         })}
       </nav>
       <div className="border-t border-border p-4">
-        <p className="text-xs text-muted-foreground">Bresh TikTok Analytics</p>
+        <p className="text-xs text-muted-foreground">{config.footerLabel}</p>
       </div>
     </aside>
   );

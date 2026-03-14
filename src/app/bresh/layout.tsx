@@ -1,9 +1,9 @@
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 
-export default function DashboardLayout({
+export default function BreshLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return <DashboardShell brand="bresh">{children}</DashboardShell>;
 }
