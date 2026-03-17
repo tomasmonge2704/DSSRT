@@ -30,7 +30,11 @@ export default function TrendsPage() {
         <h1 className="text-2xl font-bold">Tendencias</h1>
         <div className="flex flex-wrap gap-2">
           <AccountFilter value={accountFilter} onChange={setAccountFilter} />
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            metrics={allMetrics}
+          />
         </div>
       </div>
 

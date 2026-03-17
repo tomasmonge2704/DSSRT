@@ -1,7 +1,10 @@
 {
-  "lastUpdated": "2026-03-13T00:00:00Z",
+  "lastUpdated": "2026-03-17T22:50:48.185Z",
   "source": "excel",
-  "accounts": ["@elosodebresh", "@mundobresh"],
+  "accounts": [
+    "@elosodebresh",
+    "@mundobresh"
+  ],
   "weeklyMetrics": [
     {
       "id": "2026-W01-elosodebresh",
@@ -272,6 +275,36 @@
       "profileVisits": 2300,
       "reach": 481000,
       "interactions": 25914
+    },
+    {
+      "id": "2026-W10-elosodebresh",
+      "account": "@elosodebresh",
+      "weekLabel": "Semana 10",
+      "weekStartDate": "2026-03-09",
+      "weekEndDate": "2026-03-15",
+      "views": 165500,
+      "likes": 7150,
+      "comments": 17,
+      "shares": 187,
+      "followers": 208,
+      "profileVisits": 576,
+      "reach": 152000,
+      "interactions": 7354
+    },
+    {
+      "id": "2026-W10-mundobresh",
+      "account": "@mundobresh",
+      "weekLabel": "Semana 10",
+      "weekStartDate": "2026-03-09",
+      "weekEndDate": "2026-03-15",
+      "views": 375000,
+      "likes": 18000,
+      "comments": 70,
+      "shares": 2350,
+      "followers": 230,
+      "profileVisits": 1750,
+      "reach": 276000,
+      "interactions": 20420
     }
   ]
 }

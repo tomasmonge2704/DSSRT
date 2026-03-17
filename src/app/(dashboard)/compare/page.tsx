@@ -26,7 +26,11 @@ export default function ComparePage() {
             @elosodebresh vs @mundobresh
           </p>
         </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+        <DateRangePicker
+          value={dateRange}
+          onChange={setDateRange}
+          metrics={allMetrics}
+        />
       </div>
 
       {isLoading ? (

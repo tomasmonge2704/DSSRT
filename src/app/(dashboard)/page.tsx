@@ -57,7 +57,11 @@ export default function OverviewPage() {
         <div className="flex flex-wrap gap-2">
           <PeriodViewPicker value={viewMode} onChange={setViewMode} />
           <AccountFilter value={accountFilter} onChange={setAccountFilter} />
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            metrics={allMetrics}
+          />
         </div>
       </div>
 
