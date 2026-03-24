@@ -1,4 +1,4 @@
-import type { WeeklyMetrics, MetricKey, KpiCardData } from "@/types/metrics";
+import type { WeeklyMetrics, MetricKey, KpiCardData, TikTokAccount } from "@/types/metrics";
 import { ALL_METRIC_KEYS, METRIC_LABELS as LABELS } from "@/types/metrics";
 import type { MetricViewMode } from "@/lib/dashboard-filters";
 
@@ -115,48 +115,55 @@ export function getKpiData(
 export function getChartDataByAccount(
   metrics: WeeklyMetrics[],
   metricKey: MetricKey,
-  mode: MetricViewMode = "weekly"
-): { weekLabel: string; weekStartDate: string; elosodebresh: number; mundobresh: number }[] {
-  const weekMap = new Map<string, { weekLabel: string; weekStartDate: string; elosodebresh: number; mundobresh: number }>();
+  mode: MetricViewMode = "weekly",
+  accounts: TikTokAccount[] = []
+): Record<string, string | number>[] {
+  // Derive account keys from the metrics data itself if no accounts provided
+  const accountKeys = accounts.length > 0
+    ? accounts.map((a) => a.handle)
+    : [...new Set(metrics.map((m) => m.account))];
+
+  const weekMap = new Map<string, Record<string, string | number>>();
 
   for (const m of metrics) {
     const key = m.weekStartDate;
     if (!weekMap.has(key)) {
-      weekMap.set(key, {
+      const entry: Record<string, string | number> = {
         weekLabel: m.weekLabel,
         weekStartDate: m.weekStartDate,
-        elosodebresh: 0,
-        mundobresh: 0,
-      });
+      };
+      for (const handle of accountKeys) {
+        entry[handle.replace("@", "")] = 0;
+      }
+      weekMap.set(key, entry);
     }
     const entry = weekMap.get(key)!;
-    if (m.account === "@elosodebresh") {
-      entry.elosodebresh = m[metricKey];
-    } else {
-      entry.mundobresh = m[metricKey];
-    }
+    const accountKey = m.account.replace("@", "");
+    entry[accountKey] = m[metricKey];
   }
 
   const weeklyData = Array.from(weekMap.values()).sort((a, b) =>
-    a.weekStartDate.localeCompare(b.weekStartDate)
+    (a.weekStartDate as string).localeCompare(b.weekStartDate as string)
   );
 
   if (mode === "weekly") {
     return weeklyData;
   }
 
-  let accumulatedOso = 0;
-  let accumulatedMundo = 0;
+  // Cumulative mode
+  const accumulated: Record<string, number> = {};
+  for (const handle of accountKeys) {
+    accumulated[handle.replace("@", "")] = 0;
+  }
 
   return weeklyData.map((week) => {
-    accumulatedOso += week.elosodebresh;
-    accumulatedMundo += week.mundobresh;
-
-    return {
-      ...week,
-      elosodebresh: accumulatedOso,
-      mundobresh: accumulatedMundo,
-    };
+    const result = { ...week };
+    for (const handle of accountKeys) {
+      const key = handle.replace("@", "");
+      accumulated[key] += (week[key] as number) || 0;
+      result[key] = accumulated[key];
+    }
+    return result;
   });
 }
 

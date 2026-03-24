@@ -13,24 +13,20 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { metricsChartConfig } from "@/lib/chart-config";
+import { buildChartConfig } from "@/lib/chart-config";
 import { formatNumber } from "@/lib/metrics-calculator";
-import type { MetricKey } from "@/types/metrics";
+import type { MetricKey, TikTokAccount } from "@/types/metrics";
 import { METRIC_LABELS } from "@/types/metrics";
 
-interface ChartDataPoint {
-  weekLabel: string;
-  weekStartDate: string;
-  elosodebresh: number;
-  mundobresh: number;
-}
-
 interface MetricsBarChartProps {
-  data: ChartDataPoint[];
+  data: Record<string, string | number>[];
   metricKey: MetricKey;
+  accounts: TikTokAccount[];
 }
 
-export function MetricsBarChart({ data, metricKey }: MetricsBarChartProps) {
+export function MetricsBarChart({ data, metricKey, accounts }: MetricsBarChartProps) {
+  const chartConfig = buildChartConfig(accounts);
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -39,7 +35,7 @@ export function MetricsBarChart({ data, metricKey }: MetricsBarChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={metricsChartConfig} className="aspect-auto h-[200px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[200px] w-full">
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis
@@ -62,18 +58,18 @@ export function MetricsBarChart({ data, metricKey }: MetricsBarChartProps) {
                 />
               }
             />
-            <Bar
-              dataKey="elosodebresh"
-              fill="var(--color-elosodebresh)"
-              radius={[4, 4, 0, 0]}
-              name="elosodebresh"
-            />
-            <Bar
-              dataKey="mundobresh"
-              fill="var(--color-mundobresh)"
-              radius={[4, 4, 0, 0]}
-              name="mundobresh"
-            />
+            {accounts.map((account) => {
+              const key = account.handle.replace("@", "");
+              return (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  fill={`var(--color-${key})`}
+                  radius={[4, 4, 0, 0]}
+                  name={key}
+                />
+              );
+            })}
           </BarChart>
         </ChartContainer>
       </CardContent>

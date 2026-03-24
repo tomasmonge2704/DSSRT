@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { WeeklyMetrics, AccountHandle } from "@/types/metrics";
+import type { WeeklyMetrics, AccountHandle, MetricSource } from "@/types/metrics";
 
 interface UseMetricsOptions {
   accounts?: AccountHandle[];
   startDate?: string;
   endDate?: string;
+  source?: MetricSource | "all";
 }
 
 export function useMetrics(options: UseMetricsOptions = {}) {
@@ -14,6 +15,7 @@ export function useMetrics(options: UseMetricsOptions = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const accountsKey = options.accounts?.join(",") ?? "";
+  const source = options.source ?? "all";
 
   const fetchMetrics = useCallback(async () => {
     setIsLoading(true);
@@ -25,6 +27,7 @@ export function useMetrics(options: UseMetricsOptions = {}) {
     }
     if (options.startDate) params.set("startDate", options.startDate);
     if (options.endDate) params.set("endDate", options.endDate);
+    if (source !== "all") params.set("source", source);
 
     try {
       const res = await fetch(`/api/metrics?${params.toString()}`);
@@ -36,7 +39,7 @@ export function useMetrics(options: UseMetricsOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [accountsKey, options.startDate, options.endDate]);
+  }, [accountsKey, options.startDate, options.endDate, source]);
 
   useEffect(() => {
     fetchMetrics();

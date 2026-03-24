@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import { useMetrics } from "@/hooks/use-metrics";
+import { useAccounts } from "@/hooks/use-accounts";
 import { KpiGrid } from "@/components/dashboard/kpi-grid";
 import { MetricsLineChart } from "@/components/dashboard/metrics-line-chart";
 import { MetricsTable } from "@/components/dashboard/metrics-table";
 import { AccountFilter, type FilterValue } from "@/components/dashboard/account-filter";
 import { DateRangePicker } from "@/components/dashboard/date-range-picker";
 import { PeriodViewPicker } from "@/components/dashboard/period-view-picker";
+import { SourceFilter } from "@/components/dashboard/source-filter";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getKpiData,
   getChartDataByAccount,
 } from "@/lib/metrics-calculator";
-import type { AccountHandle, MetricKey } from "@/types/metrics";
+import type { AccountHandle, MetricKey, MetricSource } from "@/types/metrics";
 import {
   filterMetricsByPreset,
   getPreviousMetricsByPreset,
@@ -34,29 +36,36 @@ export default function OverviewPage() {
   const [dateRange, setDateRange] = useState<DateRangePreset>("all");
   const [viewMode, setViewMode] = useState<MetricViewMode>("cumulative");
   const [chartMetric, setChartMetric] = useState<MetricKey>("views");
+  const [sourceFilter, setSourceFilter] = useState<MetricSource | "all">("all");
 
-  const accounts: AccountHandle[] =
+  const accountHandles: AccountHandle[] =
     accountFilter === "all" ? [] : [accountFilter];
-  const { data: allMetrics, isLoading } = useMetrics();
-  const filteredMetrics = filterMetricsByPreset(allMetrics, dateRange, accounts);
+  const { data: allMetrics, isLoading } = useMetrics({ source: sourceFilter });
+  const { accounts } = useAccounts();
+  const filteredMetrics = filterMetricsByPreset(allMetrics, dateRange, accountHandles);
   const comparisonMetrics =
     viewMode === "cumulative"
-      ? getPreviousMetricsByPreset(allMetrics, dateRange, accounts)
+      ? getPreviousMetricsByPreset(allMetrics, dateRange, accountHandles)
       : [];
 
   const kpiData = getKpiData(filteredMetrics, {
     mode: viewMode,
     comparisonMetrics,
   });
-  const chartData = getChartDataByAccount(filteredMetrics, chartMetric, viewMode);
+  const chartData = getChartDataByAccount(filteredMetrics, chartMetric, viewMode, accounts);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Overview</h1>
         <div className="flex flex-wrap gap-2">
+          <SourceFilter value={sourceFilter} onChange={setSourceFilter} />
           <PeriodViewPicker value={viewMode} onChange={setViewMode} />
-          <AccountFilter value={accountFilter} onChange={setAccountFilter} />
+          <AccountFilter
+            value={accountFilter}
+            onChange={setAccountFilter}
+            accounts={accounts}
+          />
           <DateRangePicker
             value={dateRange}
             onChange={setDateRange}
@@ -101,6 +110,7 @@ export default function OverviewPage() {
           metricKey={chartMetric}
           selectedAccount={accountFilter}
           viewMode={viewMode}
+          accounts={accounts}
         />
       )}
 
@@ -109,7 +119,7 @@ export default function OverviewPage() {
         {isLoading ? (
           <Skeleton className="h-[300px] rounded-lg" />
         ) : (
-          <MetricsTable data={filteredMetrics} />
+          <MetricsTable data={filteredMetrics} accounts={accounts} />
         )}
       </div>
     </div>

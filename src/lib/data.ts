@@ -1,50 +1,122 @@
-import { promises as fs } from "fs";
-import path from "path";
-import type { MetricsStore, WeeklyMetrics, DashboardFilters } from "@/types/metrics";
+import { createServerSupabase } from "./supabase";
+import type {
+  WeeklyMetrics,
+  DashboardFilters,
+  TikTokAccount,
+} from "@/types/metrics";
 
-const DATA_PATH = path.join(process.cwd(), "data", "metrics.json");
-
-export async function getMetrics(): Promise<MetricsStore> {
-  const raw = await fs.readFile(DATA_PATH, "utf-8");
-  return JSON.parse(raw) as MetricsStore;
+// DB row (snake_case) -> WeeklyMetrics (camelCase)
+interface MetricRow {
+  id: string;
+  account_handle: string;
+  week_label: string;
+  week_start_date: string;
+  week_end_date: string;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  followers: number;
+  profile_visits: number;
+  reach: number;
+  interactions: number;
+  source: "excel" | "tiktok_api";
+  synced_at: string;
 }
 
-export async function saveMetrics(data: MetricsStore): Promise<void> {
-  await fs.writeFile(DATA_PATH, JSON.stringify(data, null, 2), "utf-8");
+function rowToMetric(row: MetricRow): WeeklyMetrics {
+  return {
+    id: row.id,
+    account: row.account_handle,
+    weekLabel: row.week_label,
+    weekStartDate: row.week_start_date,
+    weekEndDate: row.week_end_date,
+    views: row.views,
+    likes: row.likes,
+    comments: row.comments,
+    shares: row.shares,
+    followers: row.followers,
+    profileVisits: row.profile_visits,
+    reach: row.reach,
+    interactions: row.interactions,
+    source: row.source,
+  };
+}
+
+function metricToRow(m: WeeklyMetrics) {
+  return {
+    id: m.id,
+    account_handle: m.account,
+    week_label: m.weekLabel,
+    week_start_date: m.weekStartDate,
+    week_end_date: m.weekEndDate,
+    views: m.views,
+    likes: m.likes,
+    comments: m.comments,
+    shares: m.shares,
+    followers: m.followers,
+    profile_visits: m.profileVisits,
+    reach: m.reach,
+    interactions: m.interactions,
+    source: m.source,
+  };
 }
 
 export async function getFilteredMetrics(
   filters: DashboardFilters
 ): Promise<WeeklyMetrics[]> {
-  const store = await getMetrics();
-  let metrics = store.weeklyMetrics;
+  const sb = createServerSupabase();
+  let query = sb.from("weekly_metrics").select("*");
 
   if (filters.accounts.length > 0) {
-    metrics = metrics.filter((m) => filters.accounts.includes(m.account));
+    query = query.in("account_handle", filters.accounts);
   }
 
   if (filters.dateRange) {
-    const { start, end } = filters.dateRange;
-    metrics = metrics.filter(
-      (m) => m.weekStartDate >= start && m.weekStartDate <= end
-    );
+    query = query
+      .gte("week_start_date", filters.dateRange.start)
+      .lte("week_start_date", filters.dateRange.end);
   }
 
-  return metrics.sort(
-    (a, b) => a.weekStartDate.localeCompare(b.weekStartDate) || a.account.localeCompare(b.account)
-  );
+  if (filters.source && filters.source !== "all") {
+    query = query.eq("source", filters.source);
+  }
+
+  query = query.order("week_start_date").order("account_handle");
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data as MetricRow[]).map(rowToMetric);
 }
 
-export async function upsertMetrics(newMetrics: WeeklyMetrics[]): Promise<number> {
-  const store = await getMetrics();
-  const existing = new Map(store.weeklyMetrics.map((m) => [m.id, m]));
+export async function upsertMetrics(
+  metrics: WeeklyMetrics[]
+): Promise<number> {
+  const sb = createServerSupabase();
+  const rows = metrics.map(metricToRow);
 
-  for (const metric of newMetrics) {
-    existing.set(metric.id, metric);
-  }
+  const { error } = await sb
+    .from("weekly_metrics")
+    .upsert(rows, { onConflict: "id" });
 
-  store.weeklyMetrics = Array.from(existing.values());
-  store.lastUpdated = new Date().toISOString();
-  await saveMetrics(store);
-  return newMetrics.length;
+  if (error) throw error;
+  return metrics.length;
+}
+
+export async function getAccounts(): Promise<TikTokAccount[]> {
+  const sb = createServerSupabase();
+  const { data, error } = await sb
+    .from("accounts")
+    .select("*")
+    .order("created_at");
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    handle: row.handle,
+    displayName: row.display_name,
+    colorHsl: row.color_hsl,
+    tiktokOpenId: row.tiktok_open_id,
+    isConnected: row.tiktok_open_id !== null,
+  }));
 }

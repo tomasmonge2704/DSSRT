@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMetrics } from "@/hooks/use-metrics";
+import { useAccounts } from "@/hooks/use-accounts";
 import { MetricsLineChart } from "@/components/dashboard/metrics-line-chart";
 import { AccountFilter, type FilterValue } from "@/components/dashboard/account-filter";
 import { DateRangePicker } from "@/components/dashboard/date-range-picker";
@@ -19,17 +20,22 @@ export default function TrendsPage() {
   const [accountFilter, setAccountFilter] = useState<FilterValue>("all");
   const [dateRange, setDateRange] = useState<DateRangePreset>("all");
 
-  const accounts: AccountHandle[] =
+  const accountHandles: AccountHandle[] =
     accountFilter === "all" ? [] : [accountFilter];
   const { data: allMetrics, isLoading } = useMetrics();
-  const filteredMetrics = filterMetricsByPreset(allMetrics, dateRange, accounts);
+  const { accounts } = useAccounts();
+  const filteredMetrics = filterMetricsByPreset(allMetrics, dateRange, accountHandles);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Tendencias</h1>
         <div className="flex flex-wrap gap-2">
-          <AccountFilter value={accountFilter} onChange={setAccountFilter} />
+          <AccountFilter
+            value={accountFilter}
+            onChange={setAccountFilter}
+            accounts={accounts}
+          />
           <DateRangePicker
             value={dateRange}
             onChange={setDateRange}
@@ -56,9 +62,10 @@ export default function TrendsPage() {
           {ALL_METRIC_KEYS.map((key) => (
             <TabsContent key={key} value={key}>
               <MetricsLineChart
-                data={getChartDataByAccount(filteredMetrics, key)}
+                data={getChartDataByAccount(filteredMetrics, key, "weekly", accounts)}
                 metricKey={key}
                 selectedAccount={accountFilter}
+                accounts={accounts}
               />
             </TabsContent>
           ))}

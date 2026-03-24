@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getFilteredMetrics, upsertMetrics } from "@/lib/data";
-import type { AccountHandle, WeeklyMetrics } from "@/types/metrics";
+import type { AccountHandle, MetricSource, WeeklyMetrics } from "@/types/metrics";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const accountsParam = searchParams.get("accounts");
   const startDate = searchParams.get("startDate");
   const endDate = searchParams.get("endDate");
+  const sourceParam = searchParams.get("source") as MetricSource | "all" | null;
 
   const accounts: AccountHandle[] = accountsParam
-    ? (accountsParam.split(",") as AccountHandle[])
+    ? accountsParam.split(",")
     : [];
 
   const dateRange =
     startDate && endDate ? { start: startDate, end: endDate } : null;
 
-  const metrics = await getFilteredMetrics({ accounts, dateRange });
+  const metrics = await getFilteredMetrics({
+    accounts,
+    dateRange,
+    source: sourceParam ?? "all",
+  });
   return NextResponse.json(metrics);
 }
 

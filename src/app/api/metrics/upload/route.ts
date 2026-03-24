@@ -14,7 +14,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const count = await upsertMetrics(body.metrics);
+  const metricsWithSource = body.metrics.map((m) => ({
+    ...m,
+    source: "excel" as const,
+  }));
+  const count = await upsertMetrics(metricsWithSource);
   return NextResponse.json({
     success: true,
     count,

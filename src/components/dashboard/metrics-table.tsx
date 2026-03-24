@@ -10,13 +10,19 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatNumber } from "@/lib/metrics-calculator";
-import type { WeeklyMetrics } from "@/types/metrics";
+import type { WeeklyMetrics, TikTokAccount } from "@/types/metrics";
 
 interface MetricsTableProps {
   data: WeeklyMetrics[];
+  accounts: TikTokAccount[];
 }
 
-export function MetricsTable({ data }: MetricsTableProps) {
+export function MetricsTable({ data, accounts }: MetricsTableProps) {
+  const getDisplayName = (handle: string) => {
+    const account = accounts.find((a) => a.handle === handle);
+    return account?.displayName ?? handle;
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -40,7 +46,7 @@ export function MetricsTable({ data }: MetricsTableProps) {
               <TableCell className="font-medium">{row.weekLabel}</TableCell>
               <TableCell>
                 <Badge variant="secondary" className="text-xs">
-                  {row.account === "@elosodebresh" ? "El Oso" : "Mundo"}
+                  {getDisplayName(row.account)}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">{formatNumber(row.views)}</TableCell>

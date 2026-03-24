@@ -1,4 +1,6 @@
-export type AccountHandle = "@elosodebresh" | "@mundobresh";
+export type AccountHandle = string;
+
+export type MetricSource = "excel" | "tiktok_api";
 
 export interface WeeklyMetrics {
   id: string;
@@ -14,13 +16,23 @@ export interface WeeklyMetrics {
   profileVisits: number;
   reach: number;
   interactions: number;
+  source: MetricSource;
 }
 
+export interface TikTokAccount {
+  handle: AccountHandle;
+  displayName: string;
+  colorHsl: string | null;
+  tiktokOpenId: string | null;
+  isConnected: boolean;
+}
+
+/** @deprecated Use Supabase queries directly. Kept for migration script. */
 export interface MetricsStore {
   lastUpdated: string;
-  source: "excel" | "tiktok_api";
+  source: MetricSource;
   accounts: AccountHandle[];
-  weeklyMetrics: WeeklyMetrics[];
+  weeklyMetrics: Omit<WeeklyMetrics, "source">[];
 }
 
 export interface DashboardFilters {
@@ -29,11 +41,12 @@ export interface DashboardFilters {
     start: string;
     end: string;
   } | null;
+  source?: MetricSource | "all";
 }
 
 export type MetricKey = keyof Omit<
   WeeklyMetrics,
-  "id" | "account" | "weekLabel" | "weekStartDate" | "weekEndDate"
+  "id" | "account" | "weekLabel" | "weekStartDate" | "weekEndDate" | "source"
 >;
 
 export interface KpiCardData {

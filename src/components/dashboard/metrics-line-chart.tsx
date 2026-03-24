@@ -13,24 +13,18 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { metricsChartConfig } from "@/lib/chart-config";
+import { buildChartConfig } from "@/lib/chart-config";
 import { formatNumber } from "@/lib/metrics-calculator";
-import type { MetricKey, AccountHandle } from "@/types/metrics";
+import type { MetricKey, AccountHandle, TikTokAccount } from "@/types/metrics";
 import { METRIC_LABELS } from "@/types/metrics";
 import type { MetricViewMode } from "@/lib/dashboard-filters";
 
-interface ChartDataPoint {
-  weekLabel: string;
-  weekStartDate: string;
-  elosodebresh: number;
-  mundobresh: number;
-}
-
 interface MetricsLineChartProps {
-  data: ChartDataPoint[];
+  data: Record<string, string | number>[];
   metricKey: MetricKey;
   selectedAccount?: AccountHandle | "all";
   viewMode?: MetricViewMode;
+  accounts: TikTokAccount[];
 }
 
 export function MetricsLineChart({
@@ -38,9 +32,13 @@ export function MetricsLineChart({
   metricKey,
   selectedAccount = "all",
   viewMode = "weekly",
+  accounts,
 }: MetricsLineChartProps) {
-  const showOso = selectedAccount === "all" || selectedAccount === "@elosodebresh";
-  const showMundo = selectedAccount === "all" || selectedAccount === "@mundobresh";
+  const chartConfig = buildChartConfig(accounts);
+  const visibleAccounts =
+    selectedAccount === "all"
+      ? accounts
+      : accounts.filter((a) => a.handle === selectedAccount);
 
   return (
     <Card>
@@ -52,7 +50,7 @@ export function MetricsLineChart({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={metricsChartConfig} className="aspect-auto h-[350px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[350px] w-full">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis
@@ -75,26 +73,20 @@ export function MetricsLineChart({
                 />
               }
             />
-            {showOso && (
-              <Line
-                type="monotone"
-                dataKey="elosodebresh"
-                stroke="var(--color-elosodebresh)"
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                name="elosodebresh"
-              />
-            )}
-            {showMundo && (
-              <Line
-                type="monotone"
-                dataKey="mundobresh"
-                stroke="var(--color-mundobresh)"
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                name="mundobresh"
-              />
-            )}
+            {visibleAccounts.map((account) => {
+              const key = account.handle.replace("@", "");
+              return (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stroke={`var(--color-${key})`}
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  name={key}
+                />
+              );
+            })}
           </LineChart>
         </ChartContainer>
       </CardContent>

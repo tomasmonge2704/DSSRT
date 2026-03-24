@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMetrics } from "@/hooks/use-metrics";
+import { useAccounts } from "@/hooks/use-accounts";
 import { MetricsBarChart } from "@/components/dashboard/metrics-bar-chart";
 import { DateRangePicker } from "@/components/dashboard/date-range-picker";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +16,7 @@ import {
 export default function ComparePage() {
   const [dateRange, setDateRange] = useState<DateRangePreset>("all");
   const { data: allMetrics, isLoading } = useMetrics();
+  const { accounts } = useAccounts();
   const filteredMetrics = filterMetricsByPreset(allMetrics, dateRange);
 
   return (
@@ -23,7 +25,7 @@ export default function ComparePage() {
         <div>
           <h1 className="text-2xl font-bold">Comparar Cuentas</h1>
           <p className="text-sm text-muted-foreground">
-            @elosodebresh vs @mundobresh
+            {accounts.map((a) => a.handle).join(" vs ")}
           </p>
         </div>
         <DateRangePicker
@@ -44,8 +46,9 @@ export default function ComparePage() {
           {ALL_METRIC_KEYS.map((key) => (
             <MetricsBarChart
               key={key}
-              data={getChartDataByAccount(filteredMetrics, key)}
+              data={getChartDataByAccount(filteredMetrics, key, "weekly", accounts)}
               metricKey={key}
+              accounts={accounts}
             />
           ))}
         </div>

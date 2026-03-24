@@ -7,33 +7,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { AccountHandle } from "@/types/metrics";
+import type { AccountHandle, TikTokAccount } from "@/types/metrics";
 
 type FilterValue = "all" | AccountHandle;
-
-const ACCOUNT_LABELS: Record<FilterValue, string> = {
-  all: "Ambas Cuentas",
-  "@elosodebresh": "El Oso de Bresh",
-  "@mundobresh": "Mundo Bresh",
-};
 
 interface AccountFilterProps {
   value: FilterValue;
   onChange: (value: FilterValue) => void;
+  accounts: TikTokAccount[];
 }
 
-export function AccountFilter({ value, onChange }: AccountFilterProps) {
+export function AccountFilter({ value, onChange, accounts }: AccountFilterProps) {
+  const label =
+    value === "all"
+      ? "Todas las Cuentas"
+      : accounts.find((a) => a.handle === value)?.displayName ?? value;
+
   return (
     <Select value={value} onValueChange={(v) => onChange(v as FilterValue)}>
       <SelectTrigger className="w-[200px]">
-        <SelectValue placeholder="Seleccionar cuenta">
-          {ACCOUNT_LABELS[value]}
-        </SelectValue>
+        <SelectValue placeholder="Seleccionar cuenta">{label}</SelectValue>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">Ambas Cuentas</SelectItem>
-        <SelectItem value="@elosodebresh">El Oso de Bresh</SelectItem>
-        <SelectItem value="@mundobresh">Mundo Bresh</SelectItem>
+        <SelectItem value="all">Todas las Cuentas</SelectItem>
+        {accounts.map((account) => (
+          <SelectItem key={account.handle} value={account.handle}>
+            {account.displayName}
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );

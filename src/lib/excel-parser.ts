@@ -245,6 +245,7 @@ function parseMetricasTiktokSheet(sheet: XLSX.WorkSheet): ParseResult {
         profileVisits: 0,
         reach: 0,
         interactions: 0,
+        source: "excel",
       };
 
       for (const [colIdx, field] of segment.metricCols.entries()) {

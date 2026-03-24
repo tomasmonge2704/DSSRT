@@ -1,6 +1,7 @@
 import {
   BarChart3,
   GitCompareArrows,
+  Settings2,
   TrendingUp,
   Upload,
   type LucideIcon,
@@ -41,6 +42,7 @@ export const DASHBOARD_NAV_ITEMS: Array<{
   { href: "/trends", label: "Tendencias", icon: TrendingUp },
   { href: "/compare", label: "Comparar", icon: GitCompareArrows },
   { href: "/import", label: "Importar", icon: Upload },
+  { href: "/settings", label: "Conexiones", icon: Settings2 },
 ];
 
 export function getBrandHref(brand: DashboardBrand, href: string): string {
