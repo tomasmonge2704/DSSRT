@@ -21,10 +21,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Verify state
+  // Verify state and get code verifier
   const cookieStore = await cookies();
   const savedState = cookieStore.get("tiktok_oauth_state")?.value;
+  const codeVerifier = cookieStore.get("tiktok_code_verifier")?.value;
   cookieStore.delete("tiktok_oauth_state");
+  cookieStore.delete("tiktok_code_verifier");
 
   if (state !== savedState) {
     return NextResponse.redirect(
@@ -32,9 +34,15 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  if (!codeVerifier) {
+    return NextResponse.redirect(
+      `${appUrl}/settings?error=missing_code_verifier`
+    );
+  }
+
   try {
     // Exchange code for tokens
-    const tokenData = await exchangeCodeForToken(code);
+    const tokenData = await exchangeCodeForToken(code, codeVerifier);
 
     // Get user info
     const userInfo = await getUserInfo(tokenData.access_token);

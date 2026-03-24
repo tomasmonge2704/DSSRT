@@ -39,22 +39,47 @@ export interface TikTokVideo {
   comment_count: number;
 }
 
+// --- PKCE helpers ---
+
+export function generateCodeVerifier(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  return base64;
+}
+
 // --- Auth ---
 
-export function getTikTokAuthUrl(state: string): string {
+export async function getTikTokAuthUrl(
+  state: string,
+  codeChallenge: string
+): Promise<string> {
   const params = new URLSearchParams({
     client_key: process.env.TIKTOK_CLIENT_KEY!,
     scope: SCOPES,
     response_type: "code",
     redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/tiktok/callback`,
     state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
   });
 
   return `${TIKTOK_AUTH_URL}?${params.toString()}`;
 }
 
 export async function exchangeCodeForToken(
-  code: string
+  code: string,
+  codeVerifier: string
 ): Promise<TikTokTokenResponse> {
   const res = await fetch(TIKTOK_TOKEN_URL, {
     method: "POST",
@@ -65,6 +90,7 @@ export async function exchangeCodeForToken(
       code,
       grant_type: "authorization_code",
       redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/tiktok/callback`,
+      code_verifier: codeVerifier,
     }),
   });
 
