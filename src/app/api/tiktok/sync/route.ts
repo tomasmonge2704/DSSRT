@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     try {
       const accessToken = await getValidAccessToken(account.handle);
       const userInfo = await getUserInfo(accessToken);
-      const videos = await getVideoList(accessToken, 100);
+      const videos = await getVideoList(accessToken, 500);
 
       const weeklyMetrics = aggregateVideosToWeeklyMetrics({
         videos,
