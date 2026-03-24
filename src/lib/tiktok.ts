@@ -5,7 +5,7 @@ const TIKTOK_TOKEN_URL = "https://open.tiktokapis.com/v2/oauth/token/";
 const TIKTOK_USER_INFO_URL = "https://open.tiktokapis.com/v2/user/info/";
 const TIKTOK_VIDEO_LIST_URL = "https://open.tiktokapis.com/v2/video/list/";
 
-const SCOPES = "user.info.basic,user.info.stats,video.list";
+const SCOPES = "user.info.profile,user.info.stats,video.list";
 
 // --- Types ---
 
@@ -177,6 +177,7 @@ export async function getValidAccessToken(
 export async function getUserInfo(
   accessToken: string
 ): Promise<TikTokUserInfo> {
+  // user.info.profile fields + user.info.stats fields
   const fields = [
     "open_id",
     "display_name",
@@ -185,6 +186,8 @@ export async function getUserInfo(
     "following_count",
     "likes_count",
     "video_count",
+    "bio_description",
+    "is_verified",
   ].join(",");
 
   const res = await fetch(`${TIKTOK_USER_INFO_URL}?fields=${fields}`, {
@@ -192,8 +195,15 @@ export async function getUserInfo(
   });
 
   const data = await res.json();
-  if (data.error?.code) {
-    throw new Error(`TikTok user info error: ${data.error.message}`);
+  if (data.error?.code || data.error?.message) {
+    throw new Error(
+      `TikTok user info error: ${data.error?.message || data.error?.code || JSON.stringify(data)}`
+    );
+  }
+  if (!data.data?.user) {
+    throw new Error(
+      `TikTok user info: unexpected response: ${JSON.stringify(data)}`
+    );
   }
   return data.data.user;
 }
