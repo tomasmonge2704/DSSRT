@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAccounts } from "@/hooks/use-accounts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,12 +18,30 @@ interface SyncLog {
   finished_at: string | null;
 }
 
-export default function SettingsPage() {
+function SettingsAlerts() {
   const searchParams = useSearchParams();
   const success = searchParams.get("success");
   const error = searchParams.get("error");
   const connectedAccount = searchParams.get("account");
 
+  return (
+    <>
+      {success === "connected" && (
+        <div className="rounded-md border border-green-500/50 bg-green-500/10 p-4 text-sm text-green-400">
+          Cuenta {connectedAccount} conectada exitosamente.
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-md border border-red-500/50 bg-red-500/10 p-4 text-sm text-red-400">
+          Error: {decodeURIComponent(error)}
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function SettingsPage() {
   const { accounts, isLoading } = useAccounts();
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
@@ -63,17 +81,9 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Conexiones TikTok</h1>
 
-      {success === "connected" && (
-        <div className="rounded-md border border-green-500/50 bg-green-500/10 p-4 text-sm text-green-400">
-          Cuenta {connectedAccount} conectada exitosamente.
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-md border border-red-500/50 bg-red-500/10 p-4 text-sm text-red-400">
-          Error: {decodeURIComponent(error)}
-        </div>
-      )}
+      <Suspense>
+        <SettingsAlerts />
+      </Suspense>
 
       <Card>
         <CardHeader>
