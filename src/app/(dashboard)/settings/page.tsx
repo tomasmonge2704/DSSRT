@@ -58,9 +58,8 @@ export default function SettingsPage() {
     setSyncing(true);
     setSyncResult(null);
     try {
-      const res = await fetch("/api/tiktok/sync", {
+      const res = await fetch("/api/tiktok/sync-manual", {
         method: "POST",
-        headers: { Authorization: `Bearer ${window.location.origin}` },
       });
       const data = await res.json();
       if (res.ok) {

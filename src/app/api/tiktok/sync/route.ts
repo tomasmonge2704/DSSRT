@@ -5,9 +5,16 @@ import { aggregateVideosToWeeklyMetrics } from "@/lib/tiktok-aggregator";
 import { createServerSupabase } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
-  // Verify cron secret (Vercel sends this automatically for cron jobs)
+  // Verify auth: Vercel cron sends CRON_SECRET, manual sync sends the secret as query param
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const manualSecret = request.nextUrl.searchParams.get("secret");
+  const cronSecret = process.env.CRON_SECRET;
+
+  const isAuthorized =
+    authHeader === `Bearer ${cronSecret}` ||
+    manualSecret === cronSecret;
+
+  if (!isAuthorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

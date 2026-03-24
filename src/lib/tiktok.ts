@@ -95,8 +95,8 @@ export async function exchangeCodeForToken(
   });
 
   const data = await res.json();
-  if (data.error) {
-    throw new Error(`TikTok token error: ${data.error.message || data.error}`);
+  if (data.error?.code && data.error.code !== "ok") {
+    throw new Error(`TikTok token error: ${data.error.message || data.error.code}`);
   }
   return data.data ?? data;
 }
@@ -116,8 +116,8 @@ export async function refreshAccessToken(
   });
 
   const data = await res.json();
-  if (data.error) {
-    throw new Error(`TikTok refresh error: ${data.error.message || data.error}`);
+  if (data.error?.code && data.error.code !== "ok") {
+    throw new Error(`TikTok refresh error: ${data.error.message || data.error.code}`);
   }
   return data.data ?? data;
 }
@@ -195,9 +195,9 @@ export async function getUserInfo(
   });
 
   const data = await res.json();
-  if (data.error?.code || data.error?.message) {
+  if (data.error?.code && data.error.code !== "ok") {
     throw new Error(
-      `TikTok user info error: ${data.error?.message || data.error?.code || JSON.stringify(data)}`
+      `TikTok user info error: ${data.error.message || data.error.code}`
     );
   }
   if (!data.data?.user) {
@@ -244,8 +244,8 @@ export async function getVideoList(
     });
 
     const data = await res.json();
-    if (data.error?.code) {
-      throw new Error(`TikTok video list error: ${data.error.message}`);
+    if (data.error?.code && data.error.code !== "ok") {
+      throw new Error(`TikTok video list error: ${data.error.message || data.error.code}`);
     }
 
     const videos = data.data?.videos ?? [];
